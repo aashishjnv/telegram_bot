@@ -52,13 +52,13 @@ async def on_startup(bot: Bot):
         try:
             await bot.send_message(
                 admin_id,
-                f"✅ **Bot Online**\n\n"
+                f"✅ <b>Bot Online</b>\n\n"
                 f"@{me.username} is now running!\n"
                 f"Database connected ✅",
-                parse_mode="Markdown",
+                parse_mode="HTML",
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to notify admin: {e}")
 
 
 async def on_shutdown(bot: Bot):
@@ -77,29 +77,29 @@ async def main():
     # Initialise bot + dispatcher
     bot = Bot(
         token=settings.BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN),
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
+
     dp = Dispatcher(storage=MemoryStorage())
 
-    # ── Register middlewares (order matters) ──────────────────────────────
+    # ── Register middlewares ──────────────────────────────
     dp.message.middleware(BanCheckMiddleware())
     dp.callback_query.middleware(BanCheckMiddleware())
     dp.message.middleware(AntiSpamMiddleware())
     dp.callback_query.middleware(AntiSpamMiddleware())
 
-    # ── Register routers ──────────────────────────────────────────────────
-    # Admin router first so /admin commands are captured before fallbacks
+    # ── Register routers ──────────────────────────────────
     dp.include_router(admin_router)
     dp.include_router(start_router)
     dp.include_router(profile_router)
     dp.include_router(gmail_router)
     dp.include_router(withdraw_router)
 
-    # ── Lifecycle hooks ───────────────────────────────────────────────────
+    # ── Lifecycle hooks ───────────────────────────────────
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 
-    # ── Start polling ─────────────────────────────────────────────────────
+    # ── Start polling ─────────────────────────────────────
     logger.info("🚀 Starting bot polling...")
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
